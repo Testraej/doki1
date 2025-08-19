@@ -119,6 +119,7 @@ def scrape_anime_details(anime_id):
     soup = make_request(anime_url)
     if not soup: return None
 
+    # Use the improved helper to find the object with 'info_title'
     data = get_resolved_qwik_json(soup, 'info_title')
     if not data or not isinstance(data, dict):
         return {"error": "Could not parse page data."}
@@ -128,6 +129,7 @@ def scrape_anime_details(anime_id):
     image = BASE_URL + data.get('urlCover600', '')
     
     episodes = []
+    # After resolving, 'episodesNodes_last' should be a list of episode data objects
     if 'episodesNodes_last' in data and isinstance(data['episodesNodes_last'], list):
         for ep_data in data['episodesNodes_last']:
             if isinstance(ep_data, dict):
@@ -156,6 +158,7 @@ def scrape_stream_link(episode_id):
     soup = make_request(watch_url)
     if not soup: return None
 
+    # Use the improved helper to find the object with 'sourcesNode_list'
     data = get_resolved_qwik_json(soup, 'sourcesNode_list')
     if not data or not isinstance(data, dict):
         return {"error": "Could not parse stream data."}
