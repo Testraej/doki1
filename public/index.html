@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dokianime • Home</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/">Doki<span>anime</span></a>
+    <nav class="nav">
+      <a href="index.html" class="nav-link active">Home</a>
+      <a href="search.html" class="nav-link">Search</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <h1>Recent Episodes</h1>
+      <p>The latest episodes, updated fresh from the source.</p>
+    </section>
+
+    <section>
+      <div id="anime-list" class="anime-grid" aria-live="polite"></div>
+      <div id="grid-skeleton" class="grid-skeleton"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Dokianime is a fan-made project.</p>
+  </footer>
+
+  <script src="script.js" defer></script>
+</body>
+</html>

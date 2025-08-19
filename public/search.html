@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dokianime • Search</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/">Doki<span>anime</span></a>
+    <nav class="nav">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="search.html" class="nav-link active">Search</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="search-hero">
+      <h1>Search Anime</h1>
+      <div class="searchbar">
+        <input id="search-input" type="search" placeholder="e.g., One Piece, Jujutsu Kaisen..." aria-label="Search anime" />
+        <button id="search-button" class="btn">Search</button>
+      </div>
+    </section>
+
+    <section>
+      <div id="search-results" class="anime-grid" aria-live="polite"></div>
+      <div id="search-skeleton" class="grid-skeleton hidden"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Press Enter to search.</p>
+  </footer>
+
+  <script src="search-script.js" defer></script>
+</body>
+</html>

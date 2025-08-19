@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dokianime • Details</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/">Doki<span>anime</span></a>
+    <nav class="nav">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="search.html" class="nav-link">Search</a>
+    </nav>
+  </header>
+
+ <main class="container">
+    <div id="video-player-container" style="margin-bottom: 24px; background: #000; border-radius: 8px;"></div>
+    <div id="detail-root" class="detail" aria-live="polite"></div>
+    <h2 class="section-title">Episodes</h2>
+    <div id="episode-list" class="badges"></div>
+ </main>
+
+  <footer class="site-footer">
+    <p>All content is provided by external sources.</p>
+  </footer>
+
+  <script src="anime-script.js" defer></script>
+</body>
+</html>
