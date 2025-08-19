@@ -22,7 +22,7 @@ def make_request(url):
 def get_resolved_qwik_json(soup, required_key):
     """
     Parses the Qwik JSON and recursively resolves the object references to create
-    a clean, easy-to-use data object.
+    a clean, easy-to-use data object. This version is more robust.
     """
     script_tag = soup.find('script', {'type': 'qwik/json'})
     if not script_tag:
@@ -32,14 +32,25 @@ def get_resolved_qwik_json(soup, required_key):
         qwik_data = json.loads(script_tag.string)
         refs = qwik_data.get('refs', {})
         objs = qwik_data.get('objs', [])
+        
+        # Memoization cache to avoid re-resolving the same reference and prevent infinite loops.
+        memo = {}
 
         def resolve(value):
             """Recursively resolves reference IDs to their actual data."""
             if isinstance(value, str) and value in refs:
+                # If we've already resolved this reference, return the cached result.
+                if value in memo:
+                    return memo[value]
+                
                 obj_index_str = refs[value].split(' ')[0].replace('!', '')
                 try:
-                    # Recursively call resolve on the looked-up value
-                    return resolve(objs[int(obj_index_str, 36)])
+                    # IMPORTANT: Add a placeholder to the cache BEFORE the recursive call
+                    # to handle potential circular references.
+                    memo[value] = None 
+                    result = resolve(objs[int(obj_index_str, 36)])
+                    memo[value] = result # Update cache with the actual result
+                    return result
                 except (ValueError, IndexError):
                     return value # Return the ref ID if lookup fails
             elif isinstance(value, list):
@@ -56,6 +67,7 @@ def get_resolved_qwik_json(soup, required_key):
                 break
         
         if initial_object:
+            # Resolve all references starting from our initial object.
             return resolve(initial_object)
 
     except Exception as e:
@@ -107,7 +119,6 @@ def scrape_anime_details(anime_id):
     soup = make_request(anime_url)
     if not soup: return None
 
-    # Use the improved helper to find the object with 'info_title'
     data = get_resolved_qwik_json(soup, 'info_title')
     if not data or not isinstance(data, dict):
         return {"error": "Could not parse page data."}
@@ -117,7 +128,6 @@ def scrape_anime_details(anime_id):
     image = BASE_URL + data.get('urlCover600', '')
     
     episodes = []
-    # After resolving, 'episodesNodes_last' should be a list of episode data objects
     if 'episodesNodes_last' in data and isinstance(data['episodesNodes_last'], list):
         for ep_data in data['episodesNodes_last']:
             if isinstance(ep_data, dict):
@@ -146,7 +156,6 @@ def scrape_stream_link(episode_id):
     soup = make_request(watch_url)
     if not soup: return None
 
-    # Use the improved helper to find the object with 'sourcesNode_list'
     data = get_resolved_qwik_json(soup, 'sourcesNode_list')
     if not data or not isinstance(data, dict):
         return {"error": "Could not parse stream data."}
