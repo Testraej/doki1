@@ -9,7 +9,7 @@ HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
 }
 
-# --- Helper Function ---
+# --- Helper Functions ---
 def make_request(url):
     try:
         response = requests.get(url, headers=HEADERS, timeout=15)
@@ -19,25 +19,49 @@ def make_request(url):
         print(f"Error making request to {url}: {e}", file=sys.stderr)
         return None
 
-def get_data_from_qwik_json(soup, required_key):
+def get_resolved_qwik_json(soup):
     """
-    Extracts a specific data object from the page's embedded Qwik JSON
-    by looking for a required key.
+    Parses the Qwik JSON and resolves the object references to create a clean
+    data object that is easy to work with.
     """
     script_tag = soup.find('script', {'type': 'qwik/json'})
     if not script_tag:
         return None
     
     try:
-        qwik_json = json.loads(script_tag.string)
-        if 'objs' in qwik_json and qwik_json['objs']:
-            # Find the specific object that contains our required key
-            for obj in qwik_json['objs']:
-                if isinstance(obj, dict) and required_key in obj:
-                    return obj
-    except (json.JSONDecodeError, IndexError, TypeError):
+        qwik_data = json.loads(script_tag.string)
+        refs = qwik_data.get('refs', {})
+        objs = qwik_data.get('objs', [])
+
+        # This resolver function looks up reference IDs (e.g., "8c")
+        # in the 'refs' map to find the index of the real data in the 'objs' array.
+        def resolve(value):
+            if isinstance(value, str) and value in refs:
+                obj_index_str = refs[value]
+                if ' ' in obj_index_str:
+                    obj_index_str = obj_index_str.split(' ')[0].replace('!', '')
+                try:
+                    # Qwik uses base-36 for its object indices
+                    return objs[int(obj_index_str, 36)]
+                except (ValueError, IndexError):
+                    return value
+            if isinstance(value, list):
+                return [resolve(v) for v in value]
+            if isinstance(value, dict):
+                return {k: resolve(v) for k, v in value.items()}
+            return value
+
+        # Find the main data object, which is usually the largest one.
+        if not objs: return None
+        main_data_obj = max(objs, key=lambda x: len(json.dumps(x)) if isinstance(x, (dict, list)) else 0)
+        
+        # Resolve all references within this main object.
+        return resolve(main_data_obj)
+
+    except Exception as e:
+        print(f"Error resolving Qwik JSON: {e}", file=sys.stderr)
         return None
-    return None
+
 
 # --- Scraper Functions ---
 
@@ -82,8 +106,7 @@ def scrape_anime_details(anime_id):
     soup = make_request(anime_url)
     if not soup: return None
 
-    # Use the improved helper to find the object with 'info_title'
-    data = get_data_from_qwik_json(soup, 'info_title')
+    data = get_resolved_qwik_json(soup)
     if not data or not isinstance(data, dict):
         return {"error": "Could not parse page data."}
 
@@ -92,8 +115,9 @@ def scrape_anime_details(anime_id):
     image = BASE_URL + data.get('urlCover600', '')
     
     episodes = []
-    if 'episodesNodes_last' in data and isinstance(data['episodesNodes_last'], dict):
-        for ep_key, ep_data in data['episodesNodes_last'].items():
+    # After resolving, 'episodesNodes_last' should be a list of episode data objects
+    if 'episodesNodes_last' in data and isinstance(data['episodesNodes_last'], list):
+        for ep_data in data['episodesNodes_last']:
             if isinstance(ep_data, dict):
                 episodes.append({
                     'id': ep_data.get('ep_id'),
@@ -120,8 +144,7 @@ def scrape_stream_link(episode_id):
     soup = make_request(watch_url)
     if not soup: return None
 
-    # Use the improved helper to find the object with 'sourcesNode_list'
-    data = get_data_from_qwik_json(soup, 'sourcesNode_list')
+    data = get_resolved_qwik_json(soup)
     if not data or not isinstance(data, dict):
         return {"error": "Could not parse stream data."}
 
